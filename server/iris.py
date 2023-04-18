@@ -67,7 +67,42 @@ def best_shifted_hamming_distance(x, y):
     return min_int_array([h, hr1, hr2, hl1, hl2])
 
 
-class IrisMatcher:
+# a list of irises and masks
+DATABASE = [
+    (np.array([0, 0, 0, 0]), np.array([0, 0, 0, 0])),
+    (np.array([1, 1, 1, 1]), np.array([1, 1, 1, 1])),
+]
+
+# How much iris do we have
+DATABASE_COUNT = 2
+
+ap = np.array([1, 1, 1, 1])
+
+
+def auth(iris_code, mask):
+    """Return the best score from comparing the provided iris and mask to the
+    ones in the database, the user fo this function will need to define a threshold
+    to decide weather the score means an identified iris or not
+
+    We know this is suboptimal but this is the best we could came up with right now
+    as we couldn't figure out a way to return an encrypted ID of the best match or
+    a special ID if the score is too low, mainly because we can't compare FHE values
+    """
+    results = []
+
+    for i in range(DATABASE_COUNT):
+        (iris_code2, mask2) = DATABASE[i]
+        combined_mask = mask & mask2 & ap
+        ey1 = iris_code & combined_mask
+        ey2 = iris_code2 & combined_mask
+        bshd = best_shifted_hamming_distance(ey1, ey2)
+        results.append(bshd)
+
+    best_score = min_int_array(results)
+    return best_score
+
+
+class IrisAuthenticator:
     def __init__(self, input_shape, input_max_value) -> None:
         self.inputset = [
             (
@@ -88,6 +123,6 @@ class IrisMatcher:
         )
 
         self.compiler = cnp.Compiler(
-            best_shifted_hamming_distance, {"x": "encrypted", "y": "encrypted"}
+            auth, {"iris_code": "encrypted", "mask": "encrypted"}
         )
         self.circuit = self.compiler.compile(self.inputset, self.configuration)
