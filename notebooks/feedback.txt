@@ -1,0 +1,13 @@
+- Compiling this results in an error message missing some data in "must be <missing_data>"
+```python
+def f(x, y):
+    return np.sum(x) + np.sum(y)
+
+compiler = cnp.Compiler(f, {"x": "encrypted", "y": "encrypted"})
+circuit = compiler.compile([(1, 2)])
+```
+
+```
+error: 'FHELinalg.sum' op operand #0 must be , but got '!FHE.eint<33>'
+loc("-":5:10): error: 'FHELinalg.sum' op operand #0 must be , but got '!FHE.eint<33>'
+```
