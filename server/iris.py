@@ -1,35 +1,26 @@
 import numpy as np
 import concrete.numpy as cnp
 from functools import reduce
+from pathlib import Path
+
+from . import utils
 
 
 N_SHIFTS = 2
-INPUT_SHAPE = (2**2,)
-INPUT_MAX_VALUE = 2**2
-
-
-def generate_rotate_shift_right(shift, globals_=None, locals_=None):
-    function_body = f"""def rotate_shift_right{shift}(a):
-    return np.concatenate((a[-{shift}:], a[:-{shift}])).astype('int64')"""
-    exec(function_body, globals_, locals_)
-
-
-def generate_rotate_shift_left(shift, globals_=None, locals_=None):
-    function_body = f"""def rotate_shift_left{shift}(a):
-    return np.concatenate((a[{shift}:], a[:{shift}])).astype('int64')"""
-    exec(function_body, globals_, locals_)
-
-
-def generate_all_rotate_shift_functions(n_shifts, globals_=None, locals_=None):
-    for shift in range(1, n_shifts + 1):
-        generate_rotate_shift_left(shift, globals_, locals_)
-        generate_rotate_shift_right(shift, globals_, locals_)
+PROJECT_ROOT = Path(__file__).parent.parent
+APPLICATION_POINTS_PATH = PROJECT_ROOT / "data/OsirisParam/points.txt"
+APPLICATION_POINTS_INDICES = utils.read_ap_indices(APPLICATION_POINTS_PATH)
+DATA_DIR = PROJECT_ROOT / "data/Output"
+# a list of irises and masks
+DATABASE = utils.read_iris_database(DATA_DIR, APPLICATION_POINTS_INDICES)
+# How much iris do we have
+DATABASE_COUNT = len(DATABASE)
 
 
 # Generate rotate_shift_left{x} and rotate_shift_right{x} functions to be used
 # to compute the best shifted hamming distance of two arrays
 # TODO: find a way to generate them locally in another function or class
-generate_all_rotate_shift_functions(N_SHIFTS, globals(), locals())
+utils.generate_all_rotate_shift_functions(N_SHIFTS, globals(), locals())
 
 
 def hamming_distance(x, y) -> int:
@@ -67,44 +58,11 @@ def best_shifted_hamming_distance(x, y):
     return min_int_array([h, hr1, hr2, hl1, hl2])
 
 
-# a list of irises and masks
-DATABASE = [
-    (np.array([0, 0, 0, 0]), np.array([0, 0, 0, 0])),
-    (np.array([1, 1, 1, 1]), np.array([1, 1, 1, 1])),
-]
-
-# How much iris do we have
-DATABASE_COUNT = 2
-
-ap = np.array([1, 1, 1, 1])
-
-
-def auth(iris_code, mask):
-    """Return the best score from comparing the provided iris and mask to the
-    ones in the database, the user fo this function will need to define a threshold
-    to decide weather the score means an identified iris or not
-
-    We know this is suboptimal but this is the best we could came up with right now
-    as we couldn't figure out a way to return an encrypted ID of the best match or
-    a special ID if the score is too low, mainly because we can't compare FHE values
-    """
-    results = []
-
-    for i in range(DATABASE_COUNT):
-        (iris_code2, mask2) = DATABASE[i]
-        combined_mask = mask & mask2 & ap
-        ey1 = iris_code & combined_mask
-        ey2 = iris_code2 & combined_mask
-        bshd = best_shifted_hamming_distance(ey1, ey2)
-        results.append(bshd)
-
-    best_score = min_int_array(results)
-    return best_score
-
-
 class IrisAuthenticator:
-    def __init__(self, input_shape, input_max_value) -> None:
-        self.inputset = [
+    def __init__(
+        self, inputset=None, input_shape=None, input_max_value=None, database=None
+    ) -> None:
+        self.inputset = inputset or [
             (
                 np.random.randint(
                     0, input_max_value + 1, size=input_shape, dtype=np.int64
@@ -116,6 +74,8 @@ class IrisAuthenticator:
             for _ in range(100)
         ]
 
+        self.database = database or self.inputset
+
         self.configuration = cnp.Configuration(
             enable_unsafe_features=True,
             use_insecure_key_cache=True,
@@ -123,6 +83,28 @@ class IrisAuthenticator:
         )
 
         self.compiler = cnp.Compiler(
-            auth, {"iris_code": "encrypted", "mask": "encrypted"}
+            self.auth, {"iris_code": "encrypted", "mask": "encrypted"}
         )
         self.circuit = self.compiler.compile(self.inputset, self.configuration)
+
+    def auth(self, iris_code, mask):
+        """Return the best score from comparing the provided iris and mask to the
+        ones in the database, the user fo this function will need to define a threshold
+        to decide weather the score means an identified iris or not
+
+        We know this is suboptimal but this is the best we could came up with right now
+        as we couldn't figure out a way to return an encrypted ID of the best match or
+        a special ID if the score is too low, mainly because we can't compare FHE values
+        """
+        results = []
+
+        for i in range(len(self.database)):
+            (iris_code2, mask2) = self.database[i]
+            combined_mask = mask & mask2
+            ey1 = iris_code & combined_mask
+            ey2 = iris_code2 & combined_mask
+            score = best_shifted_hamming_distance(ey1, ey2)
+            results.append(score)
+
+        best_score = min_int_array(results)
+        return best_score
