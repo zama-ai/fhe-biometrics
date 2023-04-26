@@ -8,8 +8,9 @@ readme = "README.md"
 packages = [{ include = "client" }, { include = "server" }]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.12"
+python = ">=3.8,<3.12"
 concrete-numpy = "^0.11.1"
+opencv-python = "^4.7.0.72"
 
 
 [tool.poetry.group.test.dependencies]
