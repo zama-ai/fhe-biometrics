@@ -1,3 +1,0 @@
-- Shifting in the original code is done over the image itself, that'd be diffrent that doing it on the 256 application points, but how diffrent ?
-- Is shifting that important though ? cause it'll increase the execution time a lot
-- We can't divide by the sum of total_mask because only integers are supported, I tried to floor_div also and it didn't work for some reason
