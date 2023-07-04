@@ -1,0 +1,5 @@
+.artifacts
+.keys
+.ipynb_checkpoints
+.hypothesis
+**/__pycache__

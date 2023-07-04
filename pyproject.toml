@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "tfhe-ubiris"
+version = "0.1.0"
+description = "TFHFE based biometrics ID verification"
+authors = ["Haroune Mohammedi <haroune.mohammedi@quadratic-labs.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "client" }, { include = "server" }]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+concrete-numpy = "^0.11.1"
+opencv-python = "^4.7.0.72"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.2"
+hypothesis = "^6.70.2"
+
+
+[tool.poetry.group.server.dependencies]
+fastapi = "^0.95.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
