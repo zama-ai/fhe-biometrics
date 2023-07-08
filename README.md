@@ -56,11 +56,11 @@ The implemented FHE-based remote authentication system demonstrated successful f
 
 In conclusion, this project successfully implemented a remote authentication system using Fully Homomorphic Encryption (FHE) and biometric template protection (BTP) techniques. The utilization of Zama libraries, specifically the Concrete Python library, provided a streamlined and efficient implementation process. Through algorithm development, optimization techniques, and serialization methods, the system achieved secure and reliable iris biometric identification. Further improvements and real-world deployment considerations should be explored to enhance the system's usability and scalability specifically execution time which is crucial to authentication systems.
 
-## Perseptives
+## Perspectives
 
 - Make sure the system achieved an Equal Error Rate (EER) of 0.1%, meeting the specified requirements.
 - Finalize the server implementation
-- Find other optmization techniques to make the solutions more usable by bringing the execution time further down
+- Find other optimization techniques to make the solutions more usable by bringing the execution time further down
 
 ## Acknowledgments
 
